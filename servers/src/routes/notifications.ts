@@ -1,20 +1,42 @@
-import Router from "koa-router"
-import { queryAll, execute } from "../db.js"
-import { formatNotification } from "../queries.js"
-import { requireAuth } from "../middleware/auth.js"
+/**
+ * Notifications Controller
+ * 负责处理通知相关的 HTTP 请求
+ * 职责：解析请求、调用 Service、返回响应
+ */
 
-const router = new Router({ prefix: "/api/notifications" })
+import Router from 'koa-router'
+import * as NotificationService from '../services/notification.service.js'
+import { requireAuth } from '../middleware/auth.js'
 
-// GET /api/notifications
-router.get("/", requireAuth, async (ctx) => {
-  const rows = await queryAll("SELECT * FROM notifications WHERE to_user_id = ? ORDER BY created_at DESC", [Number(ctx.state.user.id)])
-  const notifications = rows.map((row: any) => formatNotification(row))
+const router = new Router({ prefix: '/api/notifications' })
+
+/**
+ * GET /api/notifications
+ * 获取用户的所有通知（需要登录）
+ */
+router.get('/', requireAuth, async (ctx) => {
+  const userId = Number(ctx.state.user.id)
+  const notifications = await NotificationService.getUserNotifications(userId)
   ctx.body = { notifications }
 })
 
-// PATCH /api/notifications (mark all read)
-router.patch("/", requireAuth, async (ctx) => {
-  await execute("UPDATE notifications SET is_read = 1 WHERE to_user_id = ?", [Number(ctx.state.user.id)])
+/**
+ * PATCH /api/notifications
+ * 标记所有通知为已读（需要登录）
+ */
+router.patch('/', requireAuth, async (ctx) => {
+  const userId = Number(ctx.state.user.id)
+  await NotificationService.markAllAsRead(userId)
+  ctx.body = { success: true }
+})
+
+/**
+ * POST /api/notifications/:id/read
+ * 标记单个通知为已读（需要登录）
+ */
+router.post('/:id/read', requireAuth, async (ctx) => {
+  const notificationId = Number(ctx.params.id)
+  await NotificationService.markAsRead(notificationId)
   ctx.body = { success: true }
 })
 

@@ -4,6 +4,7 @@ import { useState, createContext, useContext, useCallback } from "react"
 import Link from "next/link"
 import { LogIn, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "next-intl"
 
 interface LoginPromptContextType {
   showPrompt: (message?: string) => void
@@ -16,13 +17,14 @@ export function useLoginPrompt() {
 }
 
 export function LoginPromptProvider({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("loginPrompt")
   const [open, setOpen] = useState(false)
-  const [message, setMessage] = useState("登录后即可操作")
+  const [message, setMessage] = useState("")
 
   const showPrompt = useCallback((msg?: string) => {
-    setMessage(msg || "登录后即可操作")
+    setMessage(msg || t("title"))
     setOpen(true)
-  }, [])
+  }, [t])
 
   return (
     <LoginPromptContext.Provider value={{ showPrompt }}>
@@ -46,14 +48,14 @@ export function LoginPromptProvider({ children }: { children: React.ReactNode })
               </div>
               <div>
                 <h3 className="text-sm font-bold text-card-foreground">{message}</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">加入微言，参与互动讨论</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{t("description")}</p>
               </div>
               <div className="flex w-full flex-col gap-2">
                 <Button asChild className="w-full rounded-lg h-9 text-sm">
-                  <Link href="/login" onClick={() => setOpen(false)}>登录</Link>
+                  <Link href="/login" onClick={() => setOpen(false)}>{t("signIn")}</Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full rounded-lg h-9 text-sm">
-                  <Link href="/register" onClick={() => setOpen(false)}>注册</Link>
+                  <Link href="/register" onClick={() => setOpen(false)}>{t("signUp")}</Link>
                 </Button>
               </div>
             </div>

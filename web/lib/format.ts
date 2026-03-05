@@ -1,8 +1,18 @@
 import { formatDistanceToNow } from "date-fns"
 import { zhCN } from "date-fns/locale"
+import { enUS } from "date-fns/locale"
+import { ja } from "date-fns/locale"
+import type { Locale } from "date-fns"
 
-export function formatTime(dateStr: string): string {
-  return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: zhCN })
+const locales: Record<string, Locale> = {
+  zh: zhCN,
+  en: enUS,
+  ja: ja,
+}
+
+export function formatTime(dateStr: string, lang: string = "zh"): string {
+  const locale = locales[lang] || zhCN
+  return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale })
 }
 
 export function formatCount(count: number): string {

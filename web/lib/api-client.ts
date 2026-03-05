@@ -43,6 +43,9 @@ export const api = {
       body: JSON.stringify({ content, tags, media }),
     }),
 
+    deletePost: (postId: string) =>
+      request<{ success: boolean }>(`/api/posts/${postId}`, { method: "DELETE" }),
+
   uploadFile: async (file: File): Promise<{ url: string; type: string }> => {
     const formData = new FormData()
     formData.append("file", file)

@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { useSocial } from "@/lib/social-context"
 import { useLoginPrompt } from "@/components/ui/login-prompt"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { UserCheck, UserPlus, Users } from "lucide-react"
 
@@ -13,6 +14,8 @@ interface FollowButtonProps {
 }
 
 export function FollowButton({ userId, size = "sm", className }: FollowButtonProps) {
+  const t = useTranslations("profile")
+  const tCommon = useTranslations("common")
   const { currentUser, currentUserId, isLoggedIn, toggleFollow } = useSocial()
   const { showPrompt } = useLoginPrompt()
 
@@ -24,7 +27,7 @@ export function FollowButton({ userId, size = "sm", className }: FollowButtonPro
 
   const handleClick = () => {
     if (!isLoggedIn) {
-      showPrompt("登录后可以关注")
+      showPrompt(t("follow"))
       return
     }
     toggleFollow(userId)
@@ -43,8 +46,8 @@ export function FollowButton({ userId, size = "sm", className }: FollowButtonPro
         onClick={handleClick}
       >
         <Users className={cn("shrink-0", size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")} />
-        <span className="group-hover:hidden">互关</span>
-        <span className="hidden group-hover:inline">取消</span>
+        <span className="group-hover:hidden">{t("followBack")}</span>
+        <span className="hidden group-hover:inline">{tCommon("cancel")}</span>
       </Button>
     )
   }
@@ -62,8 +65,8 @@ export function FollowButton({ userId, size = "sm", className }: FollowButtonPro
         onClick={handleClick}
       >
         <UserCheck className={cn("shrink-0", size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")} />
-        <span className="group-hover:hidden">已关注</span>
-        <span className="hidden group-hover:inline">取消</span>
+        <span className="group-hover:hidden">{t("following")}</span>
+        <span className="hidden group-hover:inline">{tCommon("cancel")}</span>
       </Button>
     )
   }
@@ -80,7 +83,7 @@ export function FollowButton({ userId, size = "sm", className }: FollowButtonPro
         onClick={handleClick}
       >
         <UserPlus className={cn("shrink-0", size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5")} />
-        回粉
+        {t("followBack")}
       </Button>
     )
   }
@@ -95,7 +98,7 @@ export function FollowButton({ userId, size = "sm", className }: FollowButtonPro
       )}
       onClick={handleClick}
     >
-      关注
+      {t("follow")}
     </Button>
   )
 }

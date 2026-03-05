@@ -27,6 +27,7 @@ interface SocialContextType {
   register: (username: string, password: string, displayName: string) => Promise<void>
   logout: () => Promise<void>
   refreshData: () => Promise<void>
+  deletePost: (postId: string) => Promise<void>
 }
 
 const SocialContext = createContext<SocialContextType | null>(null)
@@ -115,6 +116,16 @@ export function SocialProvider({ children }: { children: React.ReactNode }) {
     const { post } = await api.createPost(content, tags ?? [], media ?? [])
     setPosts((prev) => [post, ...prev])
   }, [])
+
+ const deletePost = useCallback(async (postId: string) => {
+    setPosts((prev) => prev.filter((post) => post.id !== postId))
+    try {
+      await api.deletePost(postId)
+    } catch {
+      await refreshData()
+      throw new Error("删除失败")
+    }
+  }, [refreshData])
 
   const toggleLike = useCallback(
     async (postId: string) => {
@@ -305,6 +316,7 @@ export function SocialProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         refreshData,
+        deletePost,
       }}
     >
       {children}

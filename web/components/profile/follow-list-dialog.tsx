@@ -5,6 +5,7 @@ import { X } from "lucide-react"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { FollowButton } from "@/components/ui/follow-button"
 import { useSocial } from "@/lib/social-context"
+import { useTranslations } from "next-intl"
 
 interface FollowListDialogProps {
   userIds: string[]
@@ -14,6 +15,8 @@ interface FollowListDialogProps {
 }
 
 export function FollowListDialog({ userIds, title, open, onClose }: FollowListDialogProps) {
+  const t = useTranslations("followList")
+  const tCommon = useTranslations("common")
   const { getUser } = useSocial()
 
   if (!open) return null
@@ -30,7 +33,7 @@ export function FollowListDialog({ userIds, title, open, onClose }: FollowListDi
           <button
             onClick={onClose}
             className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-muted/50 transition-colors"
-            aria-label="关闭"
+            aria-label={tCommon("close")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -38,7 +41,7 @@ export function FollowListDialog({ userIds, title, open, onClose }: FollowListDi
 
         <div className="max-h-[60vh] overflow-y-auto">
           {userIds.length === 0 ? (
-            <div className="py-16 text-center text-sm text-muted-foreground">暂无用户</div>
+            <div className="py-16 text-center text-sm text-muted-foreground">{t("empty")}</div>
           ) : (
             userIds.map((uid) => {
               const user = getUser(uid)

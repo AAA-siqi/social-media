@@ -3,23 +3,30 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
-  Home, Bell, Mail, PenSquare,
+  Home, Bell, Mail,
   LogIn, LogOut, Menu, X, ChevronUp,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { useSocial } from "@/lib/social-context"
+import { useTranslations } from "next-intl"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { useState, useEffect, useRef } from "react"
 
-const NAV_ITEMS = [
-  { href: "/", icon: Home, label: "首页", auth: false },
-  { href: "/notifications", icon: Bell, label: "通知", auth: true },
-  { href: "/messages", icon: Mail, label: "私信", auth: true },
-]
+function useNavItems() {
+  const t = useTranslations("nav")
+  return [
+    { href: "/", icon: Home, label: t("home"), auth: false },
+    { href: "/notifications", icon: Bell, label: t("notifications"), auth: true },
+    { href: "/messages", icon: Mail, label: t("messages"), auth: true },
+  ]
+}
 
 export function FloatingNav() {
   const pathname = usePathname()
   const router = useRouter()
+  const t = useTranslations()
   const {
     currentUser, currentUserId, isLoggedIn,
     unreadNotificationCount, unreadMessageCount, logout,
@@ -32,6 +39,7 @@ export function FloatingNav() {
   const [confirmLogout, setConfirmLogout] = useState(false)
 
   const mobileRef = useRef<HTMLDivElement>(null)
+  const NAV_ITEMS = useNavItems()
 
   useEffect(() => {
     const fn = () => {
@@ -153,21 +161,28 @@ export function FloatingNav() {
                 <button
                   onClick={handleLogout}
                   className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-xl px-2 py-1.5 text-[13px] text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors mx-0.5"
-                  title="退出登录"
+                  title={t("nav.logout")}
                 >
                   <LogOut className="h-3.5 w-3.5" />
                 </button>
 
                 <div className="h-5 w-px bg-border/40 shrink-0 mx-0.5" />
 
-                <Link href="/?compose=true" className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors mx-1 mr-2">
-                  <PenSquare className="h-3.5 w-3.5" /> 发布
-                </Link>
+                {/* Theme toggle */}
+                <ThemeToggle />
+
+                {/* Language switcher */}
+                <LanguageSwitcher />
               </>
             ) : (
-              <Link href="/login" className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors mx-1 mr-2">
-                <LogIn className="h-3.5 w-3.5" /> 登录
-              </Link>
+              <>
+                {/* Language switcher for logged out users */}
+                <ThemeToggle />
+                <LanguageSwitcher />
+                <Link href="/login" className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 transition-colors mx-1 mr-2">
+                  <LogIn className="h-3.5 w-3.5" /> {t("nav.login")}
+                </Link>
+              </>
             )}
           </div>
         </div>
@@ -206,11 +221,11 @@ export function FloatingNav() {
 
             {isLoggedIn ? (
               <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10">
-                <LogOut className="h-4 w-4" /> 退出登录
+                <LogOut className="h-4 w-4" /> {t("nav.logout")}
               </button>
             ) : (
               <Link href="/login" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-primary font-medium hover:bg-primary/10">
-                <LogIn className="h-4 w-4" /> 登录 / 注册
+                <LogIn className="h-4 w-4" /> {t("nav.login")} / {t("nav.register")}
               </Link>
             )}
           </div>
@@ -240,20 +255,20 @@ export function FloatingNav() {
       {confirmLogout && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-background/60 backdrop-blur-sm" onClick={() => setConfirmLogout(false)}>
           <div className="glass-static w-80 rounded-2xl p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-bold text-foreground">确认登出</h3>
-            <p className="mt-2 text-sm text-muted-foreground">确定要退出当前账号吗？</p>
+            <h3 className="text-base font-bold text-foreground">{t("nav.logout")}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{t("nav.logout")}</p>
             <div className="mt-5 flex gap-2.5">
               <button
                 onClick={() => setConfirmLogout(false)}
                 className="flex-1 rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
               >
-                取消
+                {t("common.cancel")}
               </button>
               <button
                 onClick={doLogout}
                 className="flex-1 rounded-xl bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors"
               >
-                确认登出
+                {t("nav.logout")}
               </button>
             </div>
           </div>
@@ -267,7 +282,7 @@ export function FloatingNav() {
           "fixed right-4 bottom-4 z-50 h-9 w-9 rounded-xl transition-all duration-300",
           showTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
         )}
-        aria-label="回到顶部"
+        aria-label={t("nav.backToTop")}
       >
         <svg className="absolute inset-0 -rotate-90" viewBox="0 0 36 36">
           <circle cx="18" cy="18" r={circR} fill="none" stroke="currentColor" strokeWidth="1.5" className="text-border/50" />

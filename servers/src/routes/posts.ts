@@ -1,90 +1,107 @@
-import Router from "koa-router"
-import { queryAll, queryOne, execute } from "../db.js"
-import { formatPost } from "../queries.js"
-import { requireAuth } from "../middleware/auth.js"
+/**
+ * Posts Controller
+ * 负责处理帖子相关的 HTTP 请求
+ * 职责：解析请求、调用 Service、返回响应
+ */
 
-const router = new Router({ prefix: "/api/posts" })
+import Router from 'koa-router'
+import * as PostService from '../services/post.service.js'
+import { requireAuth } from '../middleware/auth.js'
 
-// GET /api/posts
-router.get("/", async (ctx) => {
-  const rows = await queryAll("SELECT * FROM posts ORDER BY created_at DESC")
-  const posts = await Promise.all(rows.map((row: any) => formatPost(row)))
+const router = new Router({ prefix: '/api/posts' })
+
+/**
+ * GET /api/posts
+ * 获取所有帖子列表
+ */
+router.get('/', async (ctx) => {
+  const posts = await PostService.getAllPosts()
   ctx.body = { posts }
 })
 
-// POST /api/posts
-router.post("/", requireAuth, async (ctx) => {
+/**
+ * POST /api/posts
+ * 发布新帖子（需要登录）
+ */
+router.post('/', requireAuth, async (ctx) => {
   const user = ctx.state.user
   const { content, tags, media } = ctx.request.body as any
-  if (!content?.trim()) { ctx.status = 400; ctx.body = { error: "内容不能为空" }; return }
 
-  const now = new Date().toISOString()
-  const { lastId } = await execute(
-    "INSERT INTO posts (author_id, content, repost_count, created_at) VALUES (?, ?, 0, ?)",
-    [Number(user.id), content.trim(), now]
-  )
-  if (Array.isArray(tags)) {
-    for (const tag of tags) {
-      if (typeof tag === "string" && tag.trim()) {
-        await execute("INSERT INTO post_tags (post_id, tag) VALUES (?, ?)", [lastId, tag.trim()])
-      }
-    }
+  try {
+    const post = await PostService.createPost({
+      authorId: Number(user.id),
+      content,
+      tags,
+      media,
+    })
+    ctx.body = { post }
+  } catch (error: any) {
+    ctx.status = 400
+    ctx.body = { error: error.message }
   }
-  if (Array.isArray(media)) {
-    for (const m of media) {
-      if (m && typeof m.url === "string" && typeof m.type === "string") {
-        await execute("INSERT INTO post_media (post_id, type, url) VALUES (?, ?, ?)", [lastId, m.type, m.url])
-      }
-    }
-  }
-  const row = await queryOne("SELECT * FROM posts WHERE id = ?", [lastId])
-  ctx.body = { post: await formatPost(row) }
 })
 
-// POST /api/posts/:id/like
-router.post("/:id/like", requireAuth, async (ctx) => {
+/**
+ * POST /api/posts/:id/like
+ * 帖子点赞/取消点赞（需要登录）
+ */
+router.post('/:id/like', requireAuth, async (ctx) => {
   const user = ctx.state.user
   const postId = Number(ctx.params.id)
-  const userId = Number(user.id)
 
-  const existing = await queryOne(
-    "SELECT id FROM likes WHERE target_type = 'post' AND target_id = ? AND user_id = ?", [postId, userId]
-  )
-  if (existing) {
-    await execute("DELETE FROM likes WHERE target_type = 'post' AND target_id = ? AND user_id = ?", [postId, userId])
-    ctx.body = { liked: false }
-  } else {
-    await execute("INSERT INTO likes (target_type, target_id, user_id, created_at) VALUES ('post', ?, ?, ?)",
-      [postId, userId, new Date().toISOString()])
-    const post = await queryOne("SELECT author_id FROM posts WHERE id = ?", [postId])
-    if (post && post.author_id !== userId) {
-      await execute("INSERT INTO notifications (type, to_user_id, from_user_id, post_id, is_read, created_at) VALUES ('like', ?, ?, ?, 0, ?)",
-        [post.author_id, userId, postId, new Date().toISOString()])
-    }
-    ctx.body = { liked: true }
+  try {
+    const result = await PostService.togglePostLike(postId, Number(user.id))
+    ctx.body = result
+  } catch (error: any) {
+    ctx.status = 400
+    ctx.body = { error: error.message }
   }
 })
 
-// POST /api/posts/:id/comments
-router.post("/:id/comments", requireAuth, async (ctx) => {
+/**
+ * POST /api/posts/:id/comments
+ * 发布帖子评论（需要登录）
+ */
+router.post('/:id/comments', requireAuth, async (ctx) => {
   const user = ctx.state.user
   const postId = Number(ctx.params.id)
   const { content } = ctx.request.body as any
-  if (!content?.trim()) { ctx.status = 400; ctx.body = { error: "评论不能为空" }; return }
 
-  const now = new Date().toISOString()
-  const userId = Number(user.id)
-  const { lastId } = await execute(
-    "INSERT INTO comments (post_id, author_id, content, created_at) VALUES (?, ?, ?, ?)",
-    [postId, userId, content.trim(), now]
-  )
-  const post = await queryOne("SELECT author_id FROM posts WHERE id = ?", [postId])
-  if (post && post.author_id !== userId) {
-    await execute("INSERT INTO notifications (type, to_user_id, from_user_id, post_id, is_read, created_at) VALUES ('comment', ?, ?, ?, 0, ?)",
-      [post.author_id, userId, postId, now])
+  try {
+    const comment = await PostService.addComment({
+      postId,
+      authorId: Number(user.id),
+      content,
+    })
+    ctx.body = { comment }
+  } catch (error: any) {
+    ctx.status = 400
+    ctx.body = { error: error.message }
   }
-  ctx.body = {
-    comment: { id: String(lastId), authorId: user.id, postId: String(postId), content: content.trim(), createdAt: now, likes: [] },
+})
+
+/**
+ * DELETE /api/posts/:id
+ * 删除帖子（需要登录，需要是作者本人）
+ */
+router.delete('/:id', requireAuth, async (ctx) => {
+  const user = ctx.state.user
+  const postId = Number(ctx.params.id)
+
+  try {
+    await PostService.deletePost(postId, Number(user.id))
+    ctx.body = { success: true }
+  } catch (error: any) {
+    if (error.message === '帖子不存在') {
+      ctx.status = 404
+      ctx.body = { error: error.message }
+    } else if (error.message === '没有权限删除此帖子') {
+      ctx.status = 403
+      ctx.body = { error: error.message }
+    } else {
+      ctx.status = 400
+      ctx.body = { error: error.message }
+    }
   }
 })
 

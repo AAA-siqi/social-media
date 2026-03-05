@@ -7,6 +7,7 @@ import { useSocial } from "@/lib/social-context"
 import { api } from "@/lib/api-client"
 import { Hash, X, ImagePlus, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl"
 
 interface MediaItem {
   type: "image" | "video"
@@ -16,6 +17,7 @@ interface MediaItem {
 }
 
 export function PostCompose() {
+  const t = useTranslations("post")
   const { currentUser, isLoggedIn, createPost } = useSocial()
   const [content, setContent] = useState("")
   const [tags, setTags] = useState<string[]>([])
@@ -122,7 +124,7 @@ export function PostCompose() {
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="有什么新鲜事？"
+            placeholder={t("composePlaceholder")}
             className="min-h-[72px] w-full resize-none bg-transparent text-base text-card-foreground placeholder:text-muted-foreground outline-none"
             rows={2}
           />
@@ -139,7 +141,7 @@ export function PostCompose() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={m.preview || m.url}
-                      alt="上传图片"
+                      alt={t("imageCount", { count: 1 })}
                       className="absolute inset-0 h-full w-full object-cover"
                     />
                   ) : (
@@ -174,7 +176,7 @@ export function PostCompose() {
               {tags.map((tag) => (
                 <span key={tag} className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                   #{tag}
-                  <button onClick={() => removeTag(tag)} className="rounded-full p-0.5 hover:bg-primary/20 transition-colors" aria-label={`移除标签 ${tag}`}>
+                  <button onClick={() => removeTag(tag)} className="rounded-full p-0.5 hover:bg-primary/20 transition-colors" aria-label={`${t("addTag")} ${tag}`}>
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
@@ -194,7 +196,7 @@ export function PostCompose() {
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleTagKeyDown}
                   onBlur={() => { addTag(); if (!tagInput.trim() && tags.length === 0) setShowTagInput(false) }}
-                  placeholder="输入标签，回车添加"
+                  placeholder={t("tagPlaceholder")}
                   className="flex-1 bg-transparent text-xs text-card-foreground placeholder:text-muted-foreground outline-none"
                   maxLength={20}
                 />
@@ -223,7 +225,7 @@ export function PostCompose() {
                 disabled={mediaItems.length >= 4 || uploading}
               >
                 {uploading ? <Loader2 className="h-[18px] w-[18px] animate-spin" /> : <ImagePlus className="h-[18px] w-[18px]" />}
-                <span className="sr-only">添加图片或视频</span>
+                <span className="sr-only">{t("addMedia")}</span>
               </Button>
               <Button
                 variant="ghost"
@@ -235,7 +237,7 @@ export function PostCompose() {
                 }}
               >
                 <Hash className="h-[18px] w-[18px]" />
-                <span className="sr-only">添加标签</span>
+                <span className="sr-only">{t("addTag")}</span>
               </Button>
               {mediaItems.length > 0 && (
                 <span className="ml-1 text-[10px] text-muted-foreground">{mediaItems.length}/4</span>
@@ -254,7 +256,7 @@ export function PostCompose() {
                 className="rounded-full px-5 text-xs"
                 size="sm"
               >
-                {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "发布"}
+                {submitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("post")}
               </Button>
             </div>
           </div>

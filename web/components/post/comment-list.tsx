@@ -9,9 +9,12 @@ import { useSocial } from "@/lib/social-context"
 import { formatTime } from "@/lib/format"
 import type { Post } from "@/lib/types"
 import { useLoginPrompt } from "@/components/ui/login-prompt"
+import { useTranslations, useLocale } from "next-intl"
 import Link from "next/link"
 
 export function CommentList({ post }: { post: Post }) {
+  const t = useTranslations("comment")
+  const locale = useLocale()
   const { getUser, currentUserId, currentUser, isLoggedIn, addComment, toggleCommentLike } = useSocial()
   const { showPrompt } = useLoginPrompt()
   const [newComment, setNewComment] = useState("")
@@ -25,7 +28,7 @@ export function CommentList({ post }: { post: Post }) {
   return (
     <div className="flex flex-col gap-3">
       {post.comments.length === 0 && (
-        <p className="py-4 text-center text-sm text-muted-foreground">暂无评论</p>
+        <p className="py-4 text-center text-sm text-muted-foreground">{t("noComments")}</p>
       )}
       {post.comments.map((comment) => {
         const commentAuthor = getUser(comment.authorId)
@@ -50,7 +53,7 @@ export function CommentList({ post }: { post: Post }) {
                 </Link>
                 <span className="text-xs text-muted-foreground">@{commentAuthor.handle}</span>
                 <span className="text-xs text-muted-foreground">·</span>
-                <time className="text-xs text-muted-foreground">{formatTime(comment.createdAt)}</time>
+                <time className="text-xs text-muted-foreground">{formatTime(comment.createdAt, locale)}</time>
               </div>
               <p className="mt-0.5 text-sm text-foreground leading-relaxed">{comment.content}</p>
               <Button
@@ -62,7 +65,7 @@ export function CommentList({ post }: { post: Post }) {
                     ? "text-red-500 hover:text-red-500 hover:bg-red-500/10"
                     : "text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
                 )}
-                onClick={() => isLoggedIn ? toggleCommentLike(post.id, comment.id) : showPrompt("登录后可以点赞")}
+                onClick={() => isLoggedIn ? toggleCommentLike(post.id, comment.id) : showPrompt(t("send"))}
               >
                 <Heart className={cn("h-3.5 w-3.5", isLiked && "fill-current")} />
                 {comment.likes.length > 0 && (
@@ -87,7 +90,7 @@ export function CommentList({ post }: { post: Post }) {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              placeholder="发表评论..."
+              placeholder={t("placeholder")}
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
             <Button
@@ -98,7 +101,7 @@ export function CommentList({ post }: { post: Post }) {
               disabled={!newComment.trim()}
             >
               <Send className="h-4 w-4" />
-              <span className="sr-only">发送评论</span>
+              <span className="sr-only">{t("send")}</span>
             </Button>
           </div>
         </div>

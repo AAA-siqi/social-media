@@ -9,9 +9,14 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useSocial } from "@/lib/social-context"
 import { formatTime } from "@/lib/format"
 import AppShell from "@/components/layout/app-shell"
+import { useTranslations, useLocale } from "next-intl"
 import Link from "next/link"
 
+export const dynamic = 'force-dynamic'
+
 export default function MessagesPage() {
+  const t = useTranslations("message")
+  const locale = useLocale()
   const { conversations, currentUserId, getUser, sendMessage } = useSocial()
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null)
   const [newMessage, setNewMessage] = useState("")
@@ -30,7 +35,7 @@ export default function MessagesPage() {
     <AppShell>
       <div className="glass-card overflow-hidden">
         <header className="flex h-12 items-center border-b border-border/30 px-5">
-          <h1 className="text-base font-bold text-card-foreground">私信</h1>
+          <h1 className="text-base font-bold text-card-foreground">{t("title")}</h1>
         </header>
 
         <div className="flex h-[calc(100vh-10rem)]">
@@ -58,10 +63,10 @@ export default function MessagesPage() {
                       <div className="flex flex-1 flex-col overflow-hidden">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-semibold text-card-foreground truncate">{other.name}</span>
-                          <span className="text-[11px] text-muted-foreground whitespace-nowrap ml-2">{formatTime(conv.lastActivity)}</span>
+                          <span className="text-[11px] text-muted-foreground whitespace-nowrap ml-2">{formatTime(conv.lastActivity, locale)}</span>
                         </div>
                         <p className={cn("truncate text-xs mt-0.5", hasUnread ? "font-semibold text-card-foreground" : "text-muted-foreground")}>
-                          {lastMsg?.senderId === currentUserId && "你："}
+                          {lastMsg?.senderId === currentUserId && `${t("you")} `}
                           {lastMsg?.content}
                         </p>
                       </div>
@@ -100,7 +105,7 @@ export default function MessagesPage() {
                         <div key={msg.id} className={cn("flex", isOwn ? "justify-end" : "justify-start")}>
                           <div className={cn("max-w-[75%] rounded-2xl px-3.5 py-2", isOwn ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted/50 text-card-foreground rounded-bl-sm")}>
                             <p className="text-sm leading-relaxed">{msg.content}</p>
-                            <p className={cn("mt-0.5 text-[10px]", isOwn ? "text-primary-foreground/60" : "text-muted-foreground")}>{formatTime(msg.createdAt)}</p>
+                            <p className={cn("mt-0.5 text-[10px]", isOwn ? "text-primary-foreground/60" : "text-muted-foreground")}>{formatTime(msg.createdAt, locale)}</p>
                           </div>
                         </div>
                       )
@@ -110,18 +115,18 @@ export default function MessagesPage() {
 
                 <div className="border-t border-border/30 p-3">
                   <div className="flex items-center gap-2 rounded-full bg-muted/40 px-4 py-2">
-                    <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSend()} placeholder="发送新消息" className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
+                    <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSend()} placeholder={t("typeMessage")} className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
                     <Button variant="ghost" size="icon-sm" className="shrink-0 rounded-full text-primary hover:bg-primary/10" onClick={handleSend} disabled={!newMessage.trim()}>
                       <Send className="h-4 w-4" />
-                      <span className="sr-only">发送</span>
+                      <span className="sr-only">{t("sendMessage")}</span>
                     </Button>
                   </div>
                 </div>
               </>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center text-center p-8">
-                <h2 className="text-lg font-bold text-card-foreground">选择一个对话</h2>
-                <p className="mt-1.5 text-sm text-muted-foreground">从左侧列表中选择一个对话</p>
+                <h2 className="text-lg font-bold text-card-foreground">{t("selectConversation")}</h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">{t("selectFromList")}</p>
               </div>
             )}
           </div>

@@ -1,11 +1,19 @@
-import type { Context, Next } from "koa"
-import { getUserByToken, SESSION_COOKIE } from "../auth.js"
+/**
+ * Authentication Middleware
+ * 负责处理认证相关的中间件逻辑
+ */
 
-// Adds ctx.state.user if a valid session cookie exists
+import type { Context, Next } from 'koa'
+import * as AuthService from '../services/auth.service.js'
+
+/**
+ * 认证中间件
+ * 如果存在有效的 session cookie，将用户信息添加到 ctx.state.user
+ */
 export async function authMiddleware(ctx: Context, next: Next) {
-  const token = ctx.cookies.get(SESSION_COOKIE)
+  const token = ctx.cookies.get(AuthService.SESSION_COOKIE)
   if (token) {
-    const user = await getUserByToken(token)
+    const user = await AuthService.getUserByToken(token)
     if (user) {
       ctx.state.user = user
     }
@@ -13,11 +21,14 @@ export async function authMiddleware(ctx: Context, next: Next) {
   await next()
 }
 
-// Guard: returns 401 if not authenticated
+/**
+ * 需要登录的守卫中间件
+ * 如果用户未登录，返回 401 错误
+ */
 export async function requireAuth(ctx: Context, next: Next) {
   if (!ctx.state.user) {
     ctx.status = 401
-    ctx.body = { error: "未登录" }
+    ctx.body = { error: '未登录' }
     return
   }
   await next()

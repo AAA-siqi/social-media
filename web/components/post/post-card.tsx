@@ -2,7 +2,16 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { MessageCircle, Heart, Share2, Check, Play } from "lucide-react"
+import { MessageCircle, Heart, Share2, Check, Play, Trash2, AlertTriangle } from "lucide-react"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+  } from "@/components/ui/dialog"
 import { MediaLightbox } from "@/components/ui/media-lightbox"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
@@ -11,15 +20,36 @@ import { useSocial } from "@/lib/social-context"
 import { formatTime } from "@/lib/format"
 import type { Post } from "@/lib/types"
 import { useLoginPrompt } from "@/components/ui/login-prompt"
+import { useTranslations, useLocale } from "next-intl"
 import { CommentList } from "./comment-list"
 
 export function PostCard({ post }: { post: Post }) {
+  const t = useTranslations()
+  const locale = useLocale()
   const { getUser, currentUserId, toggleLike, isLoggedIn } = useSocial()
   const { showPrompt } = useLoginPrompt()
   const author = getUser(post.authorId)
   const [showComments, setShowComments] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+   const { deletePost, currentUser } = useSocial()
+  const isMyPost = currentUserId === post.authorId
+
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    try {
+      await deletePost(post.id)
+      setShowDeleteDialog(false)
+    } catch (error) {
+      console.error("Delete failed:", error)
+      // 可以添加 toast 提示
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const handleShare = () => {
     const url = `${window.location.origin}/profile/${post.authorId}`
@@ -55,7 +85,7 @@ export function PostCard({ post }: { post: Post }) {
             )}
             <span className="text-xs text-muted-foreground">@{author.handle}</span>
             <span className="text-muted-foreground/40 text-xs">{"·"}</span>
-            <time className="text-xs text-muted-foreground whitespace-nowrap" suppressHydrationWarning>{formatTime(post.createdAt)}</time>
+            <time className="text-xs text-muted-foreground whitespace-nowrap" suppressHydrationWarning>{formatTime(post.createdAt, locale)}</time>
           </div>
 
           <div className="mt-1 text-[13px] leading-relaxed text-card-foreground whitespace-pre-wrap break-words">
@@ -78,7 +108,7 @@ export function PostCard({ post }: { post: Post }) {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={m.url}
-                      alt="帖子图片"
+                      alt={t("post.imageCount", { count: 1 })}
                       className="absolute inset-0 h-full w-full object-cover group-hover:scale-[1.03] transition-transform duration-200"
                       loading="lazy"
                     />
@@ -141,7 +171,7 @@ export function PostCard({ post }: { post: Post }) {
                 "gap-1 rounded-lg h-7 px-2 text-xs",
                 isLiked ? "text-red-500 hover:text-red-500 hover:bg-red-500/10" : "text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
               )}
-              onClick={() => isLoggedIn ? toggleLike(post.id) : showPrompt("登录后可以点赞")}
+              onClick={() => isLoggedIn ? toggleLike(post.id) : showPrompt(t("validation.likeRequired"))}
             >
               <Heart className={cn("h-3.5 w-3.5 transition-transform", isLiked && "fill-current scale-110")} />
               {post.likes.length > 0 && <span>{post.likes.length}</span>}
@@ -154,8 +184,50 @@ export function PostCard({ post }: { post: Post }) {
               onClick={handleShare}
             >
               {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Share2 className="h-3.5 w-3.5" />}
-              {copied && <span className="text-emerald-500">已复制</span>}
+              {copied && <span className="text-emerald-500">{t("post.copied")}</span>}
             </Button>
+
+            {/* 删除按钮 - 仅作者可见 */}
+            {isMyPost && (
+              <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-lg h-7 px-2 text-xs"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                      {t("post.deletePost")}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {t("post.deleteConfirm")}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowDeleteDialog(false)}
+                      disabled={isDeleting}
+                    >
+                      {t("common.cancel")}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? t("post.deleting") : t("post.confirmDelete")}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
       </div>

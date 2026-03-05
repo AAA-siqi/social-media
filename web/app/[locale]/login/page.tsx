@@ -5,9 +5,13 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useSocial } from "@/lib/social-context"
+import { useTranslations } from "next-intl"
+
+export const dynamic = 'force-dynamic'
 
 export default function LoginPage() {
   const router = useRouter()
+  const t = useTranslations("auth")
   const { login } = useSocial()
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -22,7 +26,7 @@ export default function LoginPage() {
       await login(username, password)
       router.push("/")
     } catch (err: any) {
-      setError(err.message || "登录失败")
+      setError(err.message || t("loginFailed"))
     } finally {
       setLoading(false)
     }
@@ -43,8 +47,8 @@ export default function LoginPage() {
         </Link>
 
         <div className="w-full glass-card p-6">
-          <h1 className="text-xl font-bold text-card-foreground text-center">欢迎回来</h1>
-          <p className="mt-1 text-center text-sm text-muted-foreground">登录你的账号继续</p>
+          <h1 className="text-xl font-bold text-card-foreground text-center">{t("welcomeBack")}</h1>
+          <p className="mt-1 text-center text-sm text-muted-foreground">{t("loginSubtitle")}</p>
 
           <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-3.5">
             {error && (
@@ -54,44 +58,44 @@ export default function LoginPage() {
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="username" className="text-xs font-medium text-card-foreground">用户名</label>
+              <label htmlFor="username" className="text-xs font-medium text-card-foreground">{t("username")}</label>
               <input
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="请输入用户名"
+                placeholder={t("usernamePlaceholder")}
                 required
                 className="h-10 rounded-lg border border-border/40 bg-background/50 px-3.5 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 placeholder:text-muted-foreground transition-all"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-xs font-medium text-card-foreground">密码</label>
+              <label htmlFor="password" className="text-xs font-medium text-card-foreground">{t("password")}</label>
               <input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="请输入密码"
+                placeholder={t("passwordPlaceholder")}
                 required
                 className="h-10 rounded-lg border border-border/40 bg-background/50 px-3.5 text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 placeholder:text-muted-foreground transition-all"
               />
             </div>
 
             <Button type="submit" disabled={loading} className="h-10 rounded-lg text-sm font-medium mt-1">
-              {loading ? "登录中..." : "登录"}
+              {loading ? t("signingIn") : t("signIn")}
             </Button>
           </form>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            {"还没有账号？ "}
-            <Link href="/register" className="text-primary hover:underline font-medium">立即注册</Link>
+            {t("noAccount")}{" "}
+            <Link href="/register" className="text-primary hover:underline font-medium">{t("registerNow")}</Link>
           </p>
         </div>
 
         <div className="w-full glass-card p-3.5">
-          <p className="text-[11px] text-muted-foreground text-center mb-2">演示账号（密码均为 123456）</p>
+          <p className="text-[11px] text-muted-foreground text-center mb-2">{t("demoAccount")}</p>
           <div className="flex flex-wrap justify-center gap-1.5">
             {["xiaoming", "siyu_chen", "haoran_z"].map((name) => (
               <button
